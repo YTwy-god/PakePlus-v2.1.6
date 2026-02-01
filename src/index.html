@@ -1,77 +1,845 @@
 <!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <link rel="stylesheet" href="styles.css" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>PakePlus App</title>
-        <script type="module" src="/main.js" defer></script>
-    </head>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>自动排班系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #7f8c8d;
+            font-size: 1.1rem;
+        }
+        
+        .container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .card h2 {
+            color: #3498db;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .card h3 {
+            color: #2c3e50;
+            margin: 15px 0 10px;
+            font-size: 1.1rem;
+        }
+        
+        .current-shift {
+            background-color: #e8f4fc;
+            border-left: 4px solid #3498db;
+        }
+        
+        .next-shift {
+            background-color: #f9f9f9;
+            border-left: 4px solid #2ecc71;
+        }
+        
+        .staff-list {
+            list-style-type: none;
+            margin: 10px 0;
+        }
+        
+        .staff-list li {
+            padding: 8px 12px;
+            margin-bottom: 8px;
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .staff-list li span {
+            font-weight: 500;
+        }
+        
+        .staff-list li .phone {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+        
+        .time-display {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #2c3e50;
+            text-align: center;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .shift-info {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+            padding: 12px;
+            background-color: #f0f7ff;
+            border-radius: 8px;
+        }
+        
+        .shift-time {
+            font-weight: 500;
+            color: #2980b9;
+        }
+        
+        .shift-name {
+            font-weight: 500;
+            color: #e74c3c;
+        }
+        
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        button {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-primary {
+            background-color: #3498db;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #2980b9;
+        }
+        
+        .btn-success {
+            background-color: #2ecc71;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background-color: #27ae60;
+        }
+        
+        .btn-warning {
+            background-color: #f39c12;
+            color: white;
+        }
+        
+        .btn-warning:hover {
+            background-color: #d68910;
+        }
+        
+        .btn-danger {
+            background-color: #e74c3c;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background-color: #c0392b;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        
+        .modal h3 {
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+        
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .staff-management {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .staff-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+        
+        .delete-btn {
+            background-color: transparent;
+            color: #e74c3c;
+            padding: 4px 8px;
+            font-size: 0.9rem;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+            
+            .staff-management {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>自动排班系统</h1>
+        <p class="subtitle">智能班次计算与人员管理</p>
+    </div>
+    
+    <div class="time-display">
+        <div id="current-time">正在加载时间...</div>
+        <div id="current-date" style="font-size: 1rem; margin-top: 5px;"></div>
+    </div>
+    
+    <div class="container">
+        <div class="card current-shift">
+            <h2>当前班次工作人员</h2>
+            <div class="shift-info">
+                <div>
+                    <div class="shift-time" id="current-shift-time">05:30 - 17:30</div>
+                    <div class="shift-name" id="current-shift-name">第一班次</div>
+                </div>
+                <div id="current-shift-countdown">剩余时间: --:--:--</div>
+            </div>
+            
+            <h3>君悦荣城</h3>
+            <ul class="staff-list" id="current-junyue-staff">
+                <!-- 动态填充 -->
+            </ul>
+            
+            <h3>河畔家园</h3>
+            <ul class="staff-list" id="current-hepan-staff">
+                <!-- 动态填充 -->
+            </ul>
+        </div>
+        
+        <div class="card next-shift">
+            <h2>下一班次工作人员</h2>
+            <div class="shift-info">
+                <div>
+                    <div class="shift-time" id="next-shift-time">17:30 - 次日05:30</div>
+                    <div class="shift-name" id="next-shift-name">第二班次</div>
+                </div>
+                <div id="next-shift-countdown">开始时间: --:--:--</div>
+            </div>
+            
+            <h3>君悦荣城</h3>
+            <ul class="staff-list" id="next-junyue-staff">
+                <!-- 动态填充 -->
+            </ul>
+            
+            <h3>河畔家园</h3>
+            <ul class="staff-list" id="next-hepan-staff">
+                <!-- 动态填充 -->
+            </ul>
+        </div>
+    </div>
+    
+    <div class="card">
+        <h2>人员与班次管理</h2>
+        <div class="staff-management">
+            <div>
+                <h3>君悦荣城工作人员</h3>
+                <div id="junyue-staff-list">
+                    <!-- 动态填充 -->
+                </div>
+                <button class="btn-primary" onclick="openAddStaffModal('junyue')">添加人员</button>
+            </div>
+            
+            <div>
+                <h3>河畔家园工作人员</h3>
+                <div id="hepan-staff-list">
+                    <!-- 动态填充 -->
+                </div>
+                <button class="btn-primary" onclick="openAddStaffModal('hepan')">添加人员</button>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button class="btn-warning" onclick="openCustomTimeModal()">自定义时间</button>
+            <button class="btn-success" onclick="resetToSystemTime()">恢复系统时间</button>
+            <button class="btn-primary" onclick="openShiftEditModal()">编辑班次分配</button>
+        </div>
+    </div>
+    
+    <!-- 添加人员模态框 -->
+    <div id="addStaffModal" class="modal">
+        <div class="modal-content">
+            <h3>添加工作人员</h3>
+            <div class="form-group">
+                <label for="staff-name">姓名</label>
+                <input type="text" id="staff-name" placeholder="请输入姓名">
+            </div>
+            <div class="form-group">
+                <label for="staff-phone">电话号码</label>
+                <input type="text" id="staff-phone" placeholder="请输入电话号码">
+            </div>
+            <div class="form-group">
+                <label for="staff-location">工作地点</label>
+                <select id="staff-location">
+                    <option value="junyue">君悦荣城</option>
+                    <option value="hepan">河畔家园</option>
+                </select>
+            </div>
+            <div class="form-actions">
+                <button class="btn-primary" onclick="addStaff()">确认添加</button>
+                <button class="btn-danger" onclick="closeModal('addStaffModal')">取消</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 自定义时间模态框 -->
+    <div id="customTimeModal" class="modal">
+        <div class="modal-content">
+            <h3>自定义日期时间</h3>
+            <div class="form-group">
+                <label for="custom-date">日期</label>
+                <input type="date" id="custom-date">
+            </div>
+            <div class="form-group">
+                <label for="custom-time">时间</label>
+                <input type="time" id="custom-time">
+            </div>
+            <div class="form-actions">
+                <button class="btn-primary" onclick="applyCustomTime()">应用时间</button>
+                <button class="btn-danger" onclick="closeModal('customTimeModal')">取消</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 编辑班次分配模态框 -->
+    <div id="shiftEditModal" class="modal">
+        <div class="modal-content">
+            <h3>编辑班次人员分配</h3>
+            <div id="shift-edit-container">
+                <!-- 动态生成班次编辑界面 -->
+            </div>
+            <div class="form-actions">
+                <button class="btn-primary" onclick="saveShiftAssignments()">保存分配</button>
+                <button class="btn-danger" onclick="closeModal('shiftEditModal')">取消</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="footer">
+        <p>自动排班系统 &copy; 2023 | 班次自动计算，每12小时轮换一次</p>
+        <p id="system-status">系统运行正常，时间已同步</p>
+    </div>
 
-    <body>
-        <main class="container">
-            <h1>Welcome to PakePlus</h1>
-            <form class="row" id="greet-form">
-                <input id="inputValue" placeholder="Enter a something..." />
-            </form>
-            <div class="resultBox">
-                <span>result: </span>
-                <span id="result"></span>
-            </div>
-            <div class="invokeBox">
-                <button id="openUrl" type="button">open_url_browser</button>
-                <button id="openUrlNew" type="button">open_url_new</button>
-                <button id="runCommand" type="button">run_command</button>
-                <button id="downloadFile" type="button">download_file</button>
-                <button id="getExeDir" type="button">get_exe_dir</button>
-                <button id="getEnvVar" type="button">get_env_var</button>
-                <button id="findPort" type="button">find_port</button>
-                <button id="openAskDialog" type="button">openAskDialog</button>
-                <button id="openConfirmDialog" type="button">
-                    openConfirmDialog
-                </button>
-                <button id="openMessageDialog" type="button">
-                    openMessageDialog
-                </button>
-                <button id="openFileDialog" type="button">
-                    openFileDialog
-                </button>
-                <button id="openDirDialog" type="button">openDirDialog</button>
-                <button id="openSaveDialog" type="button">
-                    openSaveDialog
-                </button>
-                <button id="videoTest" type="button">VideoTest</button>
-                <!-- file api -->
-                <button id="createFile" type="button">createFile</button>
-                <button id="writeTextFile" type="button">writeTextFile</button>
-                <button id="writeBinaryFile" type="button">
-                    writeBinaryFile
-                </button>
-                <button id="readTextFile" type="button">readTextFile</button>
-                <button id="readBinaryFile" type="button">
-                    readBinaryFile
-                </button>
-                <button id="readFile" type="button">readFile</button>
-                <button id="openFile" type="button">openFile</button>
-                <button id="readDir" type="button">readDir</button>
-                <button id="mkdir" type="button">mkdir</button>
-                <button id="watch" type="button">watch</button>
-                <button id="watchImmediate" type="button">
-                    watchImmediate
-                </button>
-                <button id="size" type="button">size</button>
-                <button id="exists" type="button">exists</button>
-                <button id="remove" type="button">remove</button>
-                <button id="copyFile" type="button">copyFile</button>
-                <button id="rename" type="button">rename</button>
-            </div>
-            <video
-                src="https://gh-proxy.org/https://github.com/worker500/FileHub/blob/main/root/IronMan.mp4"
-                controls
-                width="100%"
-                height="100%"
-                class="video"
-            ></video>
-        </main>
-    </body>
+    <script>
+        // 初始化数据
+        let shifts = [
+            {
+                name: "第一班次",
+                timeRange: "05:30 - 17:30",
+                junyue: ["张福东", "何德林"],
+                hepan: ["王玉"]
+            },
+            {
+                name: "第二班次",
+                timeRange: "17:30 - 次日05:30",
+                junyue: ["孙宗华", "刘家信"],
+                hepan: ["张金虎"]
+            },
+            {
+                name: "第三班次",
+                timeRange: "05:30 - 17:30",
+                junyue: ["薛杰", "薛备"],
+                hepan: ["陶金"]
+            }
+        ];
+        
+        // 存储工作人员信息（姓名和电话）
+        let staffData = {
+            junyue: [
+                { name: "张福东", phone: "" },
+                { name: "薛备", phone: "" },
+                { name: "孙宗华", phone: "" },
+                { name: "刘家信", phone: "" },
+                { name: "薛杰", phone: "" },
+                { name: "何德林", phone: "" }
+            ],
+            hepan: [
+                { name: "王玉", phone: "" },
+                { name: "张金虎", phone: "" },
+                { name: "陶金", phone: "" }
+            ]
+        };
+        
+        // 班次索引（0,1,2）
+        let currentShiftIndex = 0;
+        let nextShiftIndex = 1;
+        
+        // 是否使用自定义时间
+        let useCustomTime = false;
+        let customDateTime = null;
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            renderStaffLists();
+            updateTime();
+            updateShiftInfo();
+            setInterval(updateTime, 1000);
+            setInterval(updateShiftInfo, 60000); // 每分钟检查一次班次更新
+        });
+        
+        // 更新时间显示
+        function updateTime() {
+            const now = useCustomTime ? customDateTime : new Date();
+            const timeElement = document.getElementById('current-time');
+            const dateElement = document.getElementById('current-date');
+            
+            const timeString = now.toLocaleTimeString('zh-CN');
+            const dateString = now.toLocaleDateString('zh-CN', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric',
+                weekday: 'long'
+            });
+            
+            timeElement.textContent = `当前时间: ${timeString}`;
+            dateElement.textContent = dateString;
+            
+            // 如果是自定义时间，每秒增加时间
+            if (useCustomTime) {
+                customDateTime = new Date(customDateTime.getTime() + 1000);
+            }
+        }
+        
+        // 更新班次信息
+        function updateShiftInfo() {
+            const now = useCustomTime ? customDateTime : new Date();
+            const hours = now.getHours();
+            const minutes = now.getMinutes();
+            
+            // 计算当前班次索引
+            // 第一班次: 05:30 - 17:30
+            // 第二班次: 17:30 - 次日05:30
+            // 第三班次: 次日05:30 - 17:30 (注意：这里的次日指的是班次循环的次日)
+            
+            // 计算从某个固定起点开始的班次索引
+            // 我们假设起点是今天的05:30为第一班次开始
+            const today = new Date(now);
+            today.setHours(5, 30, 0, 0);
+            
+            // 计算距离起点经过了多少个12小时
+            const timeDiff = now - today;
+            const shiftCount = Math.floor(timeDiff / (12 * 60 * 60 * 1000));
+            
+            // 对3取模得到当前班次索引
+            currentShiftIndex = (shiftCount % 3 + 3) % 3; // 确保非负
+            nextShiftIndex = (currentShiftIndex + 1) % 3;
+            
+            // 更新界面
+            const currentShift = shifts[currentShiftIndex];
+            const nextShift = shifts[nextShiftIndex];
+            
+            document.getElementById('current-shift-name').textContent = currentShift.name;
+            document.getElementById('current-shift-time').textContent = currentShift.timeRange;
+            document.getElementById('next-shift-name').textContent = nextShift.name;
+            document.getElementById('next-shift-time').textContent = nextShift.timeRange;
+            
+            // 计算当前班次剩余时间和下一班次开始时间
+            updateCountdowns(now);
+            
+            // 更新工作人员显示
+            updateStaffDisplay('current', currentShift);
+            updateStaffDisplay('next', nextShift);
+        }
+        
+        // 更新倒计时
+        function updateCountdowns(now) {
+            // 计算当前班次结束时间
+            let currentShiftEnd = new Date(now);
+            const currentHours = now.getHours();
+            
+            // 根据当前班次设置结束时间
+            if (currentShiftIndex === 0) {
+                // 第一班次: 结束于17:30
+                currentShiftEnd.setHours(17, 30, 0, 0);
+                if (currentHours >= 17 && now.getMinutes() >= 30) {
+                    currentShiftEnd.setDate(currentShiftEnd.getDate() + 1);
+                }
+            } else if (currentShiftIndex === 1) {
+                // 第二班次: 结束于次日05:30
+                currentShiftEnd.setHours(5, 30, 0, 0);
+                currentShiftEnd.setDate(currentShiftEnd.getDate() + 1);
+            } else {
+                // 第三班次: 结束于17:30
+                currentShiftEnd.setHours(17, 30, 0, 0);
+                if (currentHours >= 17 && now.getMinutes() >= 30) {
+                    currentShiftEnd.setDate(currentShiftEnd.getDate() + 1);
+                }
+            }
+            
+            // 计算剩余时间
+            const timeLeft = currentShiftEnd - now;
+            const hoursLeft = Math.floor(timeLeft / (1000 * 60 * 60));
+            const minutesLeft = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+            const secondsLeft = Math.floor((timeLeft % (1000 * 60)) / 1000);
+            
+            document.getElementById('current-shift-countdown').textContent = 
+                `剩余时间: ${hoursLeft.toString().padStart(2, '0')}:${minutesLeft.toString().padStart(2, '0')}:${secondsLeft.toString().padStart(2, '0')}`;
+            
+            // 下一班次开始时间就是当前班次结束时间
+            document.getElementById('next-shift-countdown').textContent = 
+                `开始时间: ${currentShiftEnd.getHours().toString().padStart(2, '0')}:${currentShiftEnd.getMinutes().toString().padStart(2, '0')}`;
+        }
+        
+        // 更新工作人员显示
+        function updateStaffDisplay(type, shift) {
+            const junyueElement = document.getElementById(`${type}-junyue-staff`);
+            const hepanElement = document.getElementById(`${type}-hepan-staff`);
+            
+            // 清空现有内容
+            junyueElement.innerHTML = '';
+            hepanElement.innerHTML = '';
+            
+            // 添加君悦荣城工作人员
+            shift.junyue.forEach(staffName => {
+                const staffInfo = getStaffInfo('junyue', staffName);
+                const li = document.createElement('li');
+                li.innerHTML = `<span>${staffName}</span>${staffInfo.phone ? `<span class="phone">${staffInfo.phone}</span>` : ''}`;
+                junyueElement.appendChild(li);
+            });
+            
+            // 添加河畔家园工作人员
+            shift.hepan.forEach(staffName => {
+                const staffInfo = getStaffInfo('hepan', staffName);
+                const li = document.createElement('li');
+                li.innerHTML = `<span>${staffName}</span>${staffInfo.phone ? `<span class="phone">${staffInfo.phone}</span>` : ''}`;
+                hepanElement.appendChild(li);
+            });
+        }
+        
+        // 获取工作人员信息
+        function getStaffInfo(location, name) {
+            const staffList = staffData[location];
+            const staff = staffList.find(s => s.name === name);
+            return staff || { name, phone: '' };
+        }
+        
+        // 渲染工作人员管理列表
+        function renderStaffLists() {
+            renderStaffList('junyue');
+            renderStaffList('hepan');
+        }
+        
+        function renderStaffList(location) {
+            const container = document.getElementById(`${location}-staff-list`);
+            container.innerHTML = '';
+            
+            staffData[location].forEach((staff, index) => {
+                const staffItem = document.createElement('div');
+                staffItem.className = 'staff-item';
+                staffItem.innerHTML = `
+                    <div>
+                        <div>${staff.name}</div>
+                        ${staff.phone ? `<div style="font-size: 0.8rem; color: #7f8c8d;">${staff.phone}</div>` : ''}
+                    </div>
+                    <button class="delete-btn" onclick="deleteStaff('${location}', ${index})">删除</button>
+                `;
+                container.appendChild(staffItem);
+            });
+        }
+        
+        // 打开添加人员模态框
+        function openAddStaffModal(location) {
+            document.getElementById('staff-location').value = location;
+            document.getElementById('staff-name').value = '';
+            document.getElementById('staff-phone').value = '';
+            document.getElementById('addStaffModal').style.display = 'flex';
+        }
+        
+        // 添加工作人员
+        function addStaff() {
+            const name = document.getElementById('staff-name').value.trim();
+            const phone = document.getElementById('staff-phone').value.trim();
+            const location = document.getElementById('staff-location').value;
+            
+            if (!name) {
+                alert('请输入姓名');
+                return;
+            }
+            
+            // 检查是否已存在
+            const exists = staffData[location].some(staff => staff.name === name);
+            if (exists) {
+                alert('该人员已存在');
+                return;
+            }
+            
+            // 添加新人员
+            staffData[location].push({ name, phone });
+            renderStaffLists();
+            updateShiftInfo(); // 更新显示
+            closeModal('addStaffModal');
+            
+            // 提示用户需要分配到班次
+            if (!isStaffAssignedToShift(location, name)) {
+                alert(`已添加 ${name}，请记得在"编辑班次分配"中将其分配到具体班次。`);
+            }
+        }
+        
+        // 检查人员是否已分配到班次
+        function isStaffAssignedToShift(location, name) {
+            const locationKey = location === 'junyue' ? 'junyue' : 'hepan';
+            return shifts.some(shift => shift[locationKey].includes(name));
+        }
+        
+        // 删除工作人员
+        function deleteStaff(location, index) {
+            const staffName = staffData[location][index].name;
+            
+            // 检查是否在班次中
+            const locationKey = location === 'junyue' ? 'junyue' : 'hepan';
+            let isInShift = false;
+            
+            shifts.forEach(shift => {
+                const shiftIndex = shift[locationKey].indexOf(staffName);
+                if (shiftIndex !== -1) {
+                    isInShift = true;
+                }
+            });
+            
+            if (isInShift) {
+                if (!confirm(`"${staffName}"当前被分配到班次中，删除后将从所有班次中移除。确定删除吗？`)) {
+                    return;
+                }
+                
+                // 从所有班次中移除
+                shifts.forEach(shift => {
+                    const shiftIndex = shift[locationKey].indexOf(staffName);
+                    if (shiftIndex !== -1) {
+                        shift[locationKey].splice(shiftIndex, 1);
+                    }
+                });
+            } else {
+                if (!confirm(`确定删除"${staffName}"吗？`)) {
+                    return;
+                }
+            }
+            
+            // 从人员列表中删除
+            staffData[location].splice(index, 1);
+            renderStaffLists();
+            updateShiftInfo();
+        }
+        
+        // 打开自定义时间模态框
+        function openCustomTimeModal() {
+            const now = new Date();
+            document.getElementById('custom-date').value = now.toISOString().split('T')[0];
+            document.getElementById('custom-time').value = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+            document.getElementById('customTimeModal').style.display = 'flex';
+        }
+        
+        // 应用自定义时间
+        function applyCustomTime() {
+            const dateStr = document.getElementById('custom-date').value;
+            const timeStr = document.getElementById('custom-time').value;
+            
+            if (!dateStr || !timeStr) {
+                alert('请选择日期和时间');
+                return;
+            }
+            
+            const [year, month, day] = dateStr.split('-');
+            const [hours, minutes] = timeStr.split(':');
+            
+            customDateTime = new Date(year, month - 1, day, hours, minutes);
+            useCustomTime = true;
+            
+            document.getElementById('system-status').textContent = '使用自定义时间';
+            document.getElementById('system-status').style.color = '#e74c3c';
+            
+            updateTime();
+            updateShiftInfo();
+            closeModal('customTimeModal');
+        }
+        
+        // 恢复系统时间
+        function resetToSystemTime() {
+            useCustomTime = false;
+            document.getElementById('system-status').textContent = '系统运行正常，时间已同步';
+            document.getElementById('system-status').style.color = '#7f8c8d';
+            updateTime();
+            updateShiftInfo();
+        }
+        
+        // 打开编辑班次分配模态框
+        function openShiftEditModal() {
+            const container = document.getElementById('shift-edit-container');
+            container.innerHTML = '';
+            
+            // 生成班次编辑界面
+            shifts.forEach((shift, shiftIndex) => {
+                const shiftDiv = document.createElement('div');
+                shiftDiv.style.marginBottom = '20px';
+                shiftDiv.style.padding = '15px';
+                shiftDiv.style.backgroundColor = '#f8f9fa';
+                shiftDiv.style.borderRadius = '8px';
+                
+                shiftDiv.innerHTML = `
+                    <h4 style="margin-bottom: 10px; color: #3498db;">${shift.name} (${shift.timeRange})</h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div>
+                            <label style="display: block; margin-bottom: 8px; font-weight: 500;">君悦荣城</label>
+                            <select id="junyue-shift-${shiftIndex}" multiple style="width: 100%; height: 120px; padding: 8px;">
+                                ${staffData.junyue.map(staff => 
+                                    `<option value="${staff.name}" ${shift.junyue.includes(staff.name) ? 'selected' : ''}>${staff.name}${staff.phone ? ` (${staff.phone})` : ''}</option>`
+                                ).join('')}
+                            </select>
+                            <div style="font-size: 0.8rem; color: #7f8c8d; margin-top: 5px;">按住Ctrl键多选</div>
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 8px; font-weight: 500;">河畔家园</label>
+                            <select id="hepan-shift-${shiftIndex}" multiple style="width: 100%; height: 120px; padding: 8px;">
+                                ${staffData.hepan.map(staff => 
+                                    `<option value="${staff.name}" ${shift.hepan.includes(staff.name) ? 'selected' : ''}>${staff.name}${staff.phone ? ` (${staff.phone})` : ''}</option>`
+                                ).join('')}
+                            </select>
+                            <div style="font-size: 0.8rem; color: #7f8c8d; margin-top: 5px;">按住Ctrl键多选</div>
+                        </div>
+                    </div>
+                `;
+                
+                container.appendChild(shiftDiv);
+            });
+            
+            document.getElementById('shiftEditModal').style.display = 'flex';
+        }
+        
+        // 保存班次分配
+        function saveShiftAssignments() {
+            shifts.forEach((shift, shiftIndex) => {
+                // 获取君悦荣城选择的人员
+                const junyueSelect = document.getElementById(`junyue-shift-${shiftIndex}`);
+                const selectedJunyue = Array.from(junyueSelect.selectedOptions).map(opt => opt.value);
+                
+                // 获取河畔家园选择的人员
+                const hepanSelect = document.getElementById(`hepan-shift-${shiftIndex}`);
+                const selectedHepan = Array.from(hepanSelect.selectedOptions).map(opt => opt.value);
+                
+                // 更新班次数据
+                shift.junyue = selectedJunyue;
+                shift.hepan = selectedHepan;
+            });
+            
+            updateShiftInfo();
+            closeModal('shiftEditModal');
+            alert('班次分配已保存');
+        }
+        
+        // 关闭模态框
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+        
+        // 初始化渲染
+        renderStaffLists();
+        updateShiftInfo();
+    </script>
+</body>
 </html>
